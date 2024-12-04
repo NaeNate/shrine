@@ -32,12 +32,13 @@ fn minimax(boards: &[u64; 12], side: &str, depth: u8) -> i32 {
         let mut eval = i32::MIN;
 
         for m in moves {
-            let mut new_boards = boards;
+            let mut new_boards = *boards;
+
+            move_piece(&mut new_boards, m);
         }
     }
 
     0
-    //
 }
 
 fn main() {
@@ -50,7 +51,6 @@ fn main() {
 
     for line in stdin.lines() {
         let line = line.unwrap();
-        println!("given {}", line);
         let parts: Vec<&str> = line.split_whitespace().collect();
 
         match parts[0] {
@@ -91,6 +91,14 @@ fn main() {
                     }
 
                     if parts.contains(&"moves") {
+                        let last = parts.last().unwrap();
+
+                        let from = square_to_index(&last[0..2]);
+                        let to = square_to_index(&last[2..4]);
+                        let promotion = last.chars().nth(4);
+
+                        move_piece(&mut boards, (from, to, promotion));
+
                         side = "black"
                     }
 
