@@ -5,7 +5,10 @@ mod move_piece;
 use evaluate::evaluate;
 use generate_moves::generate_moves;
 use move_piece::move_piece;
-use std::io::{stdin, stdout, Write};
+use std::{
+    i32,
+    io::{stdin, stdout, Write},
+};
 
 fn square_to_index(square: &str) -> u8 {
     let file = square.as_bytes()[0] - b'a';
@@ -30,6 +33,14 @@ fn minimax(boards: &[u64; 12], side: &str, depth: u8) -> i32 {
 
     if side == "white" {
         let mut eval = i32::MIN;
+
+        for m in moves {
+            let mut new_boards = *boards;
+
+            move_piece(&mut new_boards, m);
+        }
+    } else {
+        let mut eval = i32::MAX;
 
         for m in moves {
             let mut new_boards = *boards;
