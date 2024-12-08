@@ -21,14 +21,61 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
 
     let mut pawns = boards[offset];
 
+    let (forward, left, right, start_rank, promotion_rank) = if side == "white" {
+        (8, 7, 9, 8..16, 56..64)
+    } else {
+        (-8, -9, -7, 48..56, 0..8)
+    };
+
     while pawns != 0 {
         let index = pawns.trailing_zeros() as u8;
 
-        let direction = if side == "white" { 8 } else { -8 };
-        let target = (index as i8 + direction) as u8;
+        let forward_move = (index as i8 + forward) as u8;
 
-        if (everyone & (1 << target)) == 0 {
-            moves.push((index, target, Some('p')));
+        if (everyone & (1 << forward_move)) == 0 {
+            if promotion_rank.contains(&forward_move) {
+                for piece in ['q', 'r', 'b', 'n'] {
+                    moves.push((index, forward_move, Some(piece)));
+                }
+            } else {
+                moves.push((index, forward_move, None));
+
+                if start_rank.contains(&index) {
+                    let double = (index as i8 + forward * 2) as u8;
+
+                    if (everyone & (1 << forward_move)) == 0 {
+                        moves.push((index, double, None));
+                    }
+                }
+            }
+        }
+
+        if index % 8 != 0 {
+            let left_move = (index as i8 + left) as u8;
+
+            if (enemies & (1 << left_move)) != 0 {
+                if promotion_rank.contains(&forward_move) {
+                    for piece in ['q', 'r', 'b', 'n'] {
+                        moves.push((index, left_move, Some(piece)));
+                    }
+                } else {
+                    moves.push((index, left_move, None));
+                }
+            }
+        }
+
+        if index % 8 != 7 {
+            let right_move = (index as i8 + right) as u8;
+
+            if (enemies & (1 << right_move)) != 0 {
+                if promotion_rank.contains(&forward_move) {
+                    for piece in ['q', 'r', 'b', 'n'] {
+                        moves.push((index, right_move, Some(piece)));
+                    }
+                } else {
+                    moves.push((index, right_move, None));
+                }
+            }
         }
 
         pawns &= pawns - 1
@@ -54,7 +101,7 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                 continue;
             }
 
-            moves.push((index, target, Some('n')))
+            moves.push((index, target, None))
         }
 
         knights &= knights - 1
@@ -87,7 +134,7 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                     break;
                 }
 
-                moves.push((index, target as u8, Some('b')));
+                moves.push((index, target as u8, None));
 
                 if (enemies & (1 << target)) != 0 {
                     break;
@@ -124,7 +171,7 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                     break;
                 }
 
-                moves.push((index, target as u8, Some('r')));
+                moves.push((index, target as u8, None));
 
                 if (enemies & (1 << target)) != 0 {
                     break;
@@ -162,7 +209,7 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                     break;
                 }
 
-                moves.push((index, target as u8, Some('q')));
+                moves.push((index, target as u8, None));
 
                 if (enemies & (1 << target)) != 0 {
                     break;
@@ -197,7 +244,7 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                 continue;
             }
 
-            moves.push((index, target, Some('k')))
+            moves.push((index, target, None))
         }
 
         kings &= kings - 1

@@ -1,5 +1,5 @@
-pub fn move_piece(boards: &mut [u64; 12], mv: (u8, u8, Option<char>)) {
-    let (from, to, promotion) = mv;
+pub fn move_piece(boards: &mut [u64; 12], m: (u8, u8, Option<char>)) {
+    let (from, to, promotion) = m;
 
     let from_mask = 1 << from;
     let to_mask = 1 << to;

@@ -29,27 +29,26 @@ fn minimax(boards: &[u64; 12], side: &str, depth: u8) -> i32 {
         return evaluate(boards);
     }
 
-    let moves = generate_moves(boards, side);
-
-    if side == "white" {
-        let mut eval = i32::MIN;
-
-        for m in moves {
-            let mut new_boards = *boards;
-
-            move_piece(&mut new_boards, m);
-        }
+    let (mut eval, other) = if side == "white" {
+        (i32::MIN, "black")
     } else {
-        let mut eval = i32::MAX;
+        (i32::MAX, "white")
+    };
 
-        for m in moves {
-            let mut new_boards = *boards;
+    for m in generate_moves(boards, side) {
+        let mut new_boards = *boards;
+        move_piece(&mut new_boards, m);
 
-            move_piece(&mut new_boards, m);
+        let new_eval = minimax(&new_boards, other, depth - 1);
+
+        if side == "white" {
+            eval = eval.max(new_eval)
+        } else {
+            eval = eval.min(new_eval)
         }
     }
 
-    0
+    eval
 }
 
 fn main() {
@@ -66,12 +65,12 @@ fn main() {
 
         match parts[0] {
             "uci" => {
-                writeln!(stdout, "id name Shrine").unwrap();
-                writeln!(stdout, "id author Nate Davis").unwrap();
-                writeln!(stdout, "uciok").unwrap();
+                println!("id name Shrine");
+                println!("id author Nate Davis");
+                println!("uciok");
             }
             "isready" => {
-                writeln!(stdout, "readyok").unwrap();
+                println!("readyok");
             }
             "ucinewgame" => {}
             "position" => {
@@ -118,25 +117,38 @@ fn main() {
             }
             "go" => {
                 let moves = generate_moves(&boards, side);
-                let multiplier = if side == "white" { 1 } else { -1 };
+                let depth = 5;
 
-                let best_move = moves
-                    .into_iter()
-                    .max_by_key(|&m| {
-                        let mut new_boards = boards.clone();
-                        move_piece(&mut new_boards, m);
-                        multiplier * evaluate(&new_boards)
-                    })
-                    .unwrap();
+                let mut best_move = moves[0];
+                let (mut best_eval, other) = match side {
+                    "white" => (i32::MIN, "black"),
+                    "black" => (i32::MAX, "white"),
+                    _ => panic!(),
+                };
+
+                for m in moves {
+                    let mut new_boards = boards;
+                    move_piece(&mut new_boards, m);
+
+                    let eval = minimax(&new_boards, other, depth - 1);
+
+                    if (side == "white" && eval > best_eval)
+                        || (side == "black" && eval < best_eval)
+                    {
+                        best_eval = eval;
+                        best_move = m;
+                    }
+                }
 
                 let from = index_to_square(best_move.0);
                 let to = index_to_square(best_move.1);
+                let promotion = best_move.2.unwrap_or(' ');
 
                 move_piece(&mut boards, best_move);
-                writeln!(stdout, "bestmove {}{}", from, to).unwrap();
+                println!("bestmove {}{}{}", from, to, promotion);
             }
             "quit" => break,
-            _ => writeln!(stdout, "unknown {}", parts[0]).unwrap(),
+            _ => println!("unknown {}", parts[0]),
         }
     }
 }
