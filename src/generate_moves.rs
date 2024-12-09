@@ -41,9 +41,9 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                 moves.push((index, forward_move, None));
 
                 if start_rank.contains(&index) {
-                    let double = (index as i8 + forward * 2) as u8;
+                    let double = (index as i8 + (forward * 2)) as u8;
 
-                    if (everyone & (1 << forward_move)) == 0 {
+                    if (everyone & (1 << double)) == 0 {
                         moves.push((index, double, None));
                     }
                 }
@@ -51,29 +51,29 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
         }
 
         if index % 8 != 0 {
-            let left_move = (index as i8 + left) as u8;
+            let left = (index as i8 + left) as u8;
 
-            if (enemies & (1 << left_move)) != 0 {
+            if (enemies & (1 << left)) != 0 {
                 if promotion_rank.contains(&forward_move) {
                     for piece in ['q', 'r', 'b', 'n'] {
-                        moves.push((index, left_move, Some(piece)));
+                        moves.push((index, left, Some(piece)));
                     }
                 } else {
-                    moves.push((index, left_move, None));
+                    moves.push((index, left, None));
                 }
             }
         }
 
         if index % 8 != 7 {
-            let right_move = (index as i8 + right) as u8;
+            let right = (index as i8 + right) as u8;
 
-            if (enemies & (1 << right_move)) != 0 {
+            if (enemies & (1 << right)) != 0 {
                 if promotion_rank.contains(&forward_move) {
                     for piece in ['q', 'r', 'b', 'n'] {
-                        moves.push((index, right_move, Some(piece)));
+                        moves.push((index, right, Some(piece)));
                     }
                 } else {
-                    moves.push((index, right_move, None));
+                    moves.push((index, right, None));
                 }
             }
         }
@@ -122,11 +122,11 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                     break;
                 }
 
-                if (direction == -9 || direction == 7) && index % 8 == 0 {
+                if (direction == -9 || direction == 7) && target % 8 == 7 {
                     break;
                 }
 
-                if (direction == 9 || direction == -7) && index % 8 == 7 {
+                if (direction == 9 || direction == -7) && target % 8 == 0 {
                     break;
                 }
 
@@ -159,11 +159,11 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                 if target < 0 || target >= 64 {
                     break;
                 }
-                if direction == -1 && index % 8 == 0 {
+                if direction == -1 && target % 8 == 7 {
                     break;
                 }
 
-                if direction == 1 && index % 8 == 7 {
+                if direction == 1 && target % 8 == 0 {
                     break;
                 }
 
@@ -197,11 +197,11 @@ pub fn generate_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<cha
                     break;
                 }
 
-                if (direction == -9 || direction == 7 || direction == -1) && index % 8 == 0 {
+                if (direction == -9 || direction == 7 || direction == -1) && target % 8 == 7 {
                     break;
                 }
 
-                if (direction == 9 || direction == -7 || direction == 1) && index % 8 == 7 {
+                if (direction == 9 || direction == -7 || direction == 1) && target % 8 == 0 {
                     break;
                 }
 

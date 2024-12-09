@@ -5,10 +5,15 @@ mod move_piece;
 use evaluate::evaluate;
 use generate_moves::generate_moves;
 use move_piece::move_piece;
-use std::{
-    i32,
-    io::{stdin, stdout, Write},
-};
+use std::{i32, io::stdin};
+
+fn other(side: &str) -> &str {
+    if side == "white" {
+        "black"
+    } else {
+        "white"
+    }
+}
 
 fn square_to_index(square: &str) -> u8 {
     let file = square.as_bytes()[0] - b'a';
@@ -24,22 +29,26 @@ fn index_to_square(index: u8) -> String {
     format!("{}{}", file as char, rank as char)
 }
 
+fn handle_move(boards: &mut [u64; 12], mv: &str) {
+    let from = square_to_index(&mv[0..2]);
+    let to = square_to_index(&mv[2..4]);
+    let promotion = mv.chars().nth(4);
+
+    move_piece(boards, (from, to, promotion));
+}
+
 fn minimax(boards: &[u64; 12], side: &str, depth: u8) -> i32 {
     if depth == 0 {
         return evaluate(boards);
     }
 
-    let (mut eval, other) = if side == "white" {
-        (i32::MIN, "black")
-    } else {
-        (i32::MAX, "white")
-    };
+    let mut eval = if side == "white" { i32::MIN } else { i32::MAX };
 
-    for m in generate_moves(boards, side) {
+    for m in generate_legal_moves(boards, side) {
         let mut new_boards = *boards;
         move_piece(&mut new_boards, m);
 
-        let new_eval = minimax(&new_boards, other, depth - 1);
+        let new_eval = minimax(&new_boards, other(side), depth - 1);
 
         if side == "white" {
             eval = eval.max(new_eval)
@@ -51,9 +60,39 @@ fn minimax(boards: &[u64; 12], side: &str, depth: u8) -> i32 {
     eval
 }
 
+fn in_check(boards: &[u64; 12], side: &str) -> bool {
+    let index = if side == "white" { 5 } else { 11 };
+    let pos = boards[index].trailing_zeros() as u8;
+
+    let enemy = generate_moves(boards, other(side));
+
+    for m in enemy {
+        if m.1 == pos {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn generate_legal_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<char>)> {
+    let moves = generate_moves(boards, side);
+    let mut legal_moves = Vec::new();
+
+    for m in moves {
+        let mut new_boards = *boards;
+        move_piece(&mut new_boards, m);
+
+        if !in_check(&new_boards, side) {
+            legal_moves.push(m);
+        }
+    }
+
+    legal_moves
+}
+
 fn main() {
     let stdin = stdin();
-    let mut stdout = stdout();
 
     let mut setup = false;
     let mut boards: [u64; 12] = [0; 12];
@@ -75,13 +114,8 @@ fn main() {
             "ucinewgame" => {}
             "position" => {
                 if setup {
-                    let last = parts.last().unwrap();
-
-                    let from = square_to_index(&last[0..2]);
-                    let to = square_to_index(&last[2..4]);
-                    let promotion = last.chars().nth(4);
-
-                    move_piece(&mut boards, (from, to, promotion));
+                    let mv = parts.last().unwrap();
+                    handle_move(&mut boards, mv);
                 } else {
                     if parts[1] == "startpos" {
                         boards = [
@@ -101,13 +135,8 @@ fn main() {
                     }
 
                     if parts.contains(&"moves") {
-                        let last = parts.last().unwrap();
-
-                        let from = square_to_index(&last[0..2]);
-                        let to = square_to_index(&last[2..4]);
-                        let promotion = last.chars().nth(4);
-
-                        move_piece(&mut boards, (from, to, promotion));
+                        let mv = parts.last().unwrap();
+                        handle_move(&mut boards, mv);
 
                         side = "black"
                     }
@@ -116,21 +145,17 @@ fn main() {
                 }
             }
             "go" => {
-                let moves = generate_moves(&boards, side);
-                let depth = 5;
+                let moves = generate_legal_moves(&boards, side);
+                let depth = 4;
 
                 let mut best_move = moves[0];
-                let (mut best_eval, other) = match side {
-                    "white" => (i32::MIN, "black"),
-                    "black" => (i32::MAX, "white"),
-                    _ => panic!(),
-                };
+                let mut best_eval = if side == "white" { i32::MIN } else { i32::MAX };
 
                 for m in moves {
                     let mut new_boards = boards;
                     move_piece(&mut new_boards, m);
 
-                    let eval = minimax(&new_boards, other, depth - 1);
+                    let eval = minimax(&new_boards, other(side), depth - 1);
 
                     if (side == "white" && eval > best_eval)
                         || (side == "black" && eval < best_eval)
