@@ -96,6 +96,7 @@ fn main() {
 
     let mut setup = false;
     let mut boards: [u64; 12] = [0; 12];
+    let mut en_passant: Option<u8> = None;
     let mut side = "white";
 
     for line in stdin.lines() {
