@@ -91,8 +91,41 @@ fn generate_legal_moves(boards: &[u64; 12], side: &str) -> Vec<(u8, u8, Option<c
     legal_moves
 }
 
+struct Game {
+    boards: [u64; 12],
+    castling: [bool; 4],
+    en_passant: Option<u8>,
+    side: &str,
+}
+
+impl Game {
+    fn new() -> Self {
+        Game {
+            boards: [
+                0b11111111 << 8,
+                (1 << 1) | (1 << 6),
+                (1 << 2) | (1 << 5),
+                (1 << 0) | (1 << 7),
+                (1 << 3),
+                (1 << 4),
+                0b11111111 << 48,
+                (1 << 57) | (1 << 62),
+                (1 << 58) | (1 << 61),
+                (1 << 56) | (1 << 63),
+                (1 << 59),
+                (1 << 60),
+            ],
+            castling: [true; 4],
+            en_passant: None,
+            side: "white",
+        }
+    }
+}
+
 fn main() {
     let stdin = stdin();
+
+    let mut game = Game::new();
 
     let mut setup = false;
     let mut boards: [u64; 12] = [0; 12];
@@ -154,7 +187,7 @@ fn main() {
 
                 for m in moves {
                     let mut new_boards = boards;
-                    move_piece(&mut new_boards, m);
+                    move_piece(&mut new_boards, m, &mut en_passant);
 
                     let eval = minimax(&new_boards, other(side), depth - 1);
 
@@ -170,7 +203,7 @@ fn main() {
                 let to = index_to_square(best_move.1);
                 let promotion = best_move.2.unwrap_or(' ');
 
-                move_piece(&mut boards, best_move);
+                move_piece(&mut boards, best_move, &mut en_passant);
                 println!("bestmove {}{}{}", from, to, promotion);
             }
             "quit" => break,
